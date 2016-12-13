@@ -8,7 +8,7 @@
 #include <iostream>
 
 #ifndef USE_STD_THREAD_LOCAL
-#define USE_STD_THREAD_LOCAL 1 // 0: use our own implemention. 1: use c++11 thread_local if possible
+#define USE_STD_THREAD_LOCAL 1 // 0: use our own implementation. 1: use c++11 thread_local if possible
 #endif
 // windows thread_local requires public ctor
 /// Windows use fibers api if possible. You can add -DUSE_PTHREAD for winrt+mingw to use pthread for winrt, or -D_WIN32_WINNT=0x0600 for mingw to use fibers
@@ -55,7 +55,12 @@ template<typename T>
 class ThreadLocal
 {
 public:
-    ThreadLocal() : ThreadLocal([]{return new T();}) {}
+    ThreadLocal() : ThreadLocal(std::function<T*()>([]{return new T();})) {}
+    // To support assignment in declaration may be not supported (ios/android clang) if inherit ctor is used.
+    // FIXME: what if T == std::function<T*()>?
+    ThreadLocal(const T& t) : ThreadLocal(std::function<T*()>([]{return new T();})) {
+        *get() = t;
+    }
     ThreadLocal(std::function<T*()> c, std::function<void(T*)> d = std::default_delete<T>())
     : ctor_(c) , dtor_(d) {
 #ifdef USE_PTHREAD
