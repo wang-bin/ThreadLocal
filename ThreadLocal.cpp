@@ -13,6 +13,12 @@
 #ifdef TEST_TLS
 THREAD_LOCAL(int) a;
 
+void setA(int* x, int v)
+{
+    *x = v;
+}
+
+
 int main()
 {
     a = 123;
@@ -21,6 +27,8 @@ int main()
         std::cout << FUNCINFO << " a: " << (int)a << ", thread " << std::this_thread::get_id() << std::endl;
     });
     t.join();
+    std::cout << FUNCINFO << " a: " << (int)a << ", thread " << std::this_thread::get_id() << std::endl;
+    setA(&a, 456);
     std::cout << FUNCINFO << " a: " << (int)a << ", thread " << std::this_thread::get_id() << std::endl;
     struct X {
         X(int v = 0) : x(v) {}

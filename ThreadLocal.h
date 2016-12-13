@@ -10,6 +10,7 @@
 #ifndef USE_STD_THREAD_LOCAL
 #define USE_STD_THREAD_LOCAL 1 // 0: use our own implementation. 1: use c++11 thread_local if possible
 #endif
+
 // windows thread_local requires public ctor
 /// Windows use fibers api if possible. You can add -DUSE_PTHREAD for winrt+mingw to use pthread for winrt, or -D_WIN32_WINNT=0x0600 for mingw to use fibers
 // TODO: TlsAlloc() support for XP. Use RegisterSingleObject. currently must use vs2015 thread_local to support xp.
@@ -101,6 +102,7 @@ public:
 #endif
         return d->t;
     }
+    T* operator&() const { return get();}
     T* operator->() const { return get(); }
     /*!
      * The following operators let ThreadLocal behaves like c++11 thread_local var, except T's member must be accessed by operator->(),
