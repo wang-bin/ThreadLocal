@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 WangBin <wbsecg1 at gmail.com>/<binwang at pptv.com>
+ * Copyright (c) 2016-2017 WangBin <wbsecg1 at gmail.com>/<binwang at pptv.com>
  */
 #pragma once
 #include <functional>
@@ -17,7 +17,7 @@
 // LSB linuxbase, apple has no thread_local, __thread
 #if defined(__clang__)
 //#if defined(__apple_build_version__) /* Clang also masquerades as GCC */
-# if __has_feature(cxx_thread_local)
+# if __has_feature(cxx_thread_local) // TODO: check ndk r13 r14(3.8.275480 __clang_patchlevel__)
 #   define CC_HAS_THREAD_LOCAL
 # endif
 #elif defined(_MSC_VER) && _MSC_VER >= 1900
@@ -30,7 +30,7 @@
 #define THREAD_LOCAL(T) thread_local T
 #else
 #define THREAD_LOCAL(T) ThreadLocal<T>
-# if defined(_WIN32)
+# if defined(_WIN32) // http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system
 #   include <windows.h>
 #   if defined(_MSC_VER) || (!defined(USE_PTHREAD) && _WIN32_WINNT >= 0x0600) // default use fibers api for mingw targeting store/vista
 #       define USE_FLS // vista, winstore
@@ -59,11 +59,18 @@ public:
     ThreadLocal() : ThreadLocal(std::function<T*()>([]{return new T();})) {}
     // To support assignment in declaration may be not supported (ios/android clang) if inherit ctor is used.
     // FIXME: what if T == std::function<T*()>?
-    ThreadLocal(const T& t) : ThreadLocal(std::function<T*()>([]{return new T();})) {
-        *get() = t;
+    ThreadLocal(const T& t) : ThreadLocal(std::function<T*()>([=]{
+        std::cout << "construct from copy ctor" << std::endl << std::flush;
+        T* v = new T();
+        *v = t;
+        return v;
+    })) {
+        *get() = t; // not necessary
     }
+    // TODO: move constructor?
     ThreadLocal(std::function<T*()> c, std::function<void(T*)> d = std::default_delete<T>())
-    : ctor_(c) , dtor_(d) {
+    : ctor_([=](T*& t){ t = c();})
+    , dtor_(d) {
 #ifdef USE_PTHREAD
         pthread_key_create(&key_, default_exit);
 #endif
@@ -93,7 +100,7 @@ public:
         if (v)
             return static_cast<Data*>(v)->t;
         Data *d = new Data();
-        d->t = ctor_();
+        ctor_(d->t);
         d->tl = this;
 #if defined(USE_PTHREAD)
         pthread_setspecific(key_, d);
@@ -114,7 +121,7 @@ public:
         return *this;
     }
     ThreadLocal& operator=(T&& v) {
-        *get() = v;
+        *get() = std::forward<T>(v);
         return *this;
     }
 private:
@@ -142,6 +149,7 @@ private:
 #ifdef USE_FLS
     DWORD index_;
 #endif
-    std::function<T*()> ctor_;
-    std::function<void(T*)> dtor_;
+    // static ThreadLocal<T> var, var ctor will be called only once, so must store how var is allocated and initialized, using ctor_
+    std::function<void(T*&)> ctor_ = nullptr;
+    std::function<void(T*)> dtor_ = nullptr;
 };
