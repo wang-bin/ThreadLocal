@@ -59,17 +59,10 @@ public:
     ThreadLocal() : ThreadLocal(std::function<T*()>([]{return new T();})) {}
     // To support assignment in declaration may be not supported (ios/android clang) if inherit ctor is used.
     // FIXME: what if T == std::function<T*()>?
-    ThreadLocal(const T& t) : ThreadLocal(std::function<T*()>([=]{
-        std::cout << "construct from copy ctor" << std::endl << std::flush;
-        T* v = new T();
-        *v = t;
-        return v;
-    })) {
-        *get() = t; // not necessary
-    }
+    ThreadLocal(const T& t) : ThreadLocal(std::function<T*()>([=]{ return new T(t);})) {}
     // TODO: move constructor?
     ThreadLocal(std::function<T*()> c, std::function<void(T*)> d = std::default_delete<T>())
-    : ctor_([=](T*& t){ t = c();})
+    : ctor_(c)
     , dtor_(d) {
 #ifdef USE_PTHREAD
         pthread_key_create(&key_, default_exit);
@@ -100,7 +93,8 @@ public:
         if (v)
             return static_cast<Data*>(v)->t;
         Data *d = new Data();
-        ctor_(d->t);
+        std::cout << FUNCINFO << " allocate and initialize ThreadLocal data" << std::endl << std::flush;
+        d->t = ctor_();
         d->tl = this;
 #if defined(USE_PTHREAD)
         pthread_setspecific(key_, d);
@@ -150,6 +144,6 @@ private:
     DWORD index_;
 #endif
     // static ThreadLocal<T> var, var ctor will be called only once, so must store how var is allocated and initialized, using ctor_
-    std::function<void(T*&)> ctor_ = nullptr;
+    std::function<T*()> ctor_ = nullptr;
     std::function<void(T*)> dtor_ = nullptr;
 };
