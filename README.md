@@ -1,8 +1,10 @@
 # ThreadLocal
 Portable and implementation configurable `c++11` like thread local. The same code supports different implementations controlled by macro `USE_STD_THREAD_LOCAL`.
 
+The default implementation of macro `THREAD_LOCAL(...)` is c++11 `thread_local` keyword if supported. Otherwise, pthread and FLS implementation is used.
+
 ## WHY
-`c++11` **thread_local** is not available for vs2013, apple clang, libc++ in android ndk < r14.
+`c++11` **thread_local** is not available for vs2013, apple clang for iOS (and macOS if xcode < 8), libc++ in android ndk < r14.
 
 ## Tested Compilers
 VS2013, VS2015, gcc>=4.7, clang >=3.4, Apple clang

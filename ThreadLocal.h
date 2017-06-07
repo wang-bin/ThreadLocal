@@ -14,7 +14,7 @@
 // windows thread_local requires public ctor
 /// Windows use fibers api if possible. You can add -DUSE_PTHREAD for winrt+mingw to use pthread for winrt, or -D_WIN32_WINNT=0x0600 for mingw to use fibers
 // TODO: TlsAlloc() support for XP. Use RegisterSingleObject. currently must use vs2015 thread_local to support xp.
-// LSB linuxbase, apple has no thread_local, __thread
+// LSB linuxbase, apple clang for iOS(and macOS if xcode<8) has no thread_local, __thread
 #if defined(__clang__)
 //#if defined(__apple_build_version__) /* Clang also masquerades as GCC */
 # if __has_feature(cxx_thread_local) // TODO: check ndk r13 r14(3.8.275480 __clang_patchlevel__)
