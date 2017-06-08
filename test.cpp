@@ -29,15 +29,18 @@ int main()
     t.join();
     std::cout << FUNCINFO << " a: " << (int)a << ", thread " << std::this_thread::get_id() << std::endl;
     struct X {
-        X(int v = 0) : x(v) {}
+        X(int v = 0) : x(v) {std::cout << this  << " x: " << x<< std::endl;}
         ~X() {
-            std::cout << FUNCINFO << ", thread " << std::this_thread::get_id() << std::endl;
+            std::cout << FUNCINFO <<this << "  x: " << x << ", thread " << std::this_thread::get_id() << std::endl;
         }
         operator int&() {return x;}
         int x;
     };
-    THREAD_LOCAL(X) x;
+    static THREAD_LOCAL(X) x;
     x = X(1);
+    static THREAD_LOCAL(X*) y = new X(333);
+    X* yy = y;
+    delete yy;
     std::thread t1([&]{
         x = 3;
         std::cout << FUNCINFO << " x: " << (X&)x << ", thread " << std::this_thread::get_id() << std::endl;
