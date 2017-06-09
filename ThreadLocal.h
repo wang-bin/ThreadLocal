@@ -59,7 +59,6 @@ class ThreadLocal
 public:
     ThreadLocal() : ThreadLocal(std::function<T*()>([]{return new T();})) {}
     // To support assignment in declaration may be not supported (ios/android clang) if inherit ctor is used.
-    // FIXME: what if T == std::function<T*()>?
     ThreadLocal(const T& t) : ThreadLocal(std::function<T*()>([=]{ return new T(t);})) {}
     // TODO: move constructor?
     ThreadLocal(std::function<T*()> c, std::function<void(T*)> d = std::default_delete<T>())
