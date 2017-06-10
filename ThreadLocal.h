@@ -11,14 +11,12 @@
 #define USE_STD_THREAD_LOCAL 1 // 0: use our own implementation. 1: use c++11 thread_local if possible
 #endif
 
-// windows thread_local requires public ctor
-/// Windows use fibers api if possible. You can add -DUSE_PTHREAD for winrt+mingw to use pthread for winrt, or -D_WIN32_WINNT=0x0600 for mingw to use fibers
-// TODO: TlsAlloc() support for XP. Use RegisterSingleObject. currently must use vs2015 thread_local to support xp.
 // LSB linuxbase, apple clang for iOS(and macOS if xcode<8) has no thread_local, __thread
 // apple: http://asciiwwdc.com/2016/sessions/405#t=354.596
+// android libc++ is poor if libc is old: llvm-libc++abi//src/cxa_thread_atexit.cpp
 #if defined(__clang__)
 //#if defined(__apple_build_version__) /* Clang also masquerades as GCC */
-# if __has_feature(cxx_thread_local) // TODO: check ndk r13 r14(3.8.275480 __clang_patchlevel__)
+# if __has_feature(cxx_thread_local) // TODO: check ndk r13 r14(3.8.275480 __clang_patchlevel__) becase libc++abi version is hard to check
 #   define CC_HAS_THREAD_LOCAL
 # endif
 #elif defined(_MSC_VER) && _MSC_VER >= 1900
@@ -31,18 +29,20 @@
 #define THREAD_LOCAL(T) thread_local T
 #else
 #define THREAD_LOCAL(T) ThreadLocal<T>
-# if defined(_WIN32) // http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system
-#   include <windows.h>
+#endif
+
+// Fibers api is preferred for mingw targeting vista or later, and msvc
+#if defined(_WIN32) // http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system
+#include <windows.h>
 #   if defined(_MSC_VER) || (!defined(USE_PTHREAD) && _WIN32_WINNT >= 0x0600) // default use fibers api for mingw targeting store/vista
 #       define USE_FLS // vista, winstore
 #   endif
-# endif
-# if !defined(USE_FLS)
-#   include <pthread.h>
+#endif
+#if !defined(USE_FLS)
+#include <pthread.h>
 #   ifndef USE_PTHREAD
 #       define USE_PTHREAD
 #   endif //USE_PTHREAD
-# endif
 #endif
 
 #ifndef FUNCINFO
@@ -60,7 +60,7 @@ public:
     ThreadLocal() : ThreadLocal(std::function<T*()>([]{return new T();})) {}
     // To support assignment in declaration may be not supported (ios/android clang) if inherit ctor is used.
     ThreadLocal(const T& t) : ThreadLocal(std::function<T*()>([=]{ return new T(t);})) {}
-    // TODO: move constructor?
+    // ThreadLocal(T&& t) : ThreadLocal(std::function<T*()>([=]{ return new T(t);})) {std::cout << "move ctor" << std::endl;}
     ThreadLocal(std::function<T*()> c, std::function<void(T*)> d = std::default_delete<T>())
     : ctor_(c)
     , dtor_(d) {
