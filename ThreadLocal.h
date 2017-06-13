@@ -97,6 +97,21 @@ public:
         FlsFree(index_);
 #endif
     }
+    T* operator&() const { return get();}
+    /*!
+     * The following operators let ThreadLocal behaves like c++11 thread_local var, except T's member must be accessed by operator->(),
+     * e.g. t->member (a workaround is explicitly convert to access: ((T&)t).member)
+     */
+    operator T&() const { return *get(); }
+    ThreadLocal& operator=(const T& v) {
+        *get() = v;
+        return *this;
+    }
+    ThreadLocal& operator=(T&& v) {
+        *get() = std::forward<T>(v);
+        return *this;
+    }
+private:
     T* get() const {
         void* v = nullptr;
 #if defined(USE_PTHREAD)
@@ -119,22 +134,7 @@ public:
 #endif
         return d->t;
     }
-    T* operator&() const { return get();}
     T* operator->() const { return get(); }
-    /*!
-     * The following operators let ThreadLocal behaves like c++11 thread_local var, except T's member must be accessed by operator->(),
-     * e.g. t->member (a workaround is explicitly convert to access: ((T&)t).member)
-     */
-    operator T&() const { return *get(); }
-    ThreadLocal& operator=(const T& v) {
-        *get() = v;
-        return *this;
-    }
-    ThreadLocal& operator=(T&& v) {
-        *get() = std::forward<T>(v);
-        return *this;
-    }
-private:
     static void
 #ifdef USE_FLS
     WINAPI // WINAPI/__stdcall is required to avoid crash on 32bit target, ignored by x64/arm compiler
