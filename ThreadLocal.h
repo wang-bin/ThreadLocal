@@ -73,10 +73,9 @@ template<typename T>
 class ThreadLocal
 {
 public:
-    ThreadLocal() : ThreadLocal(std::function<T*()>([]{return new T();})) {}
-    // To support assignment in declaration may be not supported (ios/android clang) if inherit ctor is used.
-    ThreadLocal(const T& t) : ThreadLocal(std::function<T*()>([=]{ return new T(t);})) {}
-    // ThreadLocal(T&& t) : ThreadLocal(std::function<T*()>([=]{ return new T(t);})) {std::cout << "move ctor" << std::endl;}
+    ThreadLocal() : ThreadLocal([]{return new T();}) {}
+    ThreadLocal(const T& t) : ThreadLocal([t]{ return new T(t);}) {}
+    ThreadLocal(T&& t) : ThreadLocal([t]{ return new T(t);}) {}
     ThreadLocal(std::function<T*()> c, std::function<void(T*)> d = std::default_delete<T>())
     : ctor_(c)
     , dtor_(d) {
