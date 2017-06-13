@@ -53,6 +53,22 @@
 #endif
 #endif
 
+/*!
+ * differences between `static ThreadLocal<T> t` and `static thread_local T s`
+ * 1. t is an object of type ThreadLocal<T>, the thread data is of type T, while s is an object of T.
+ * 2. t is constructed only once, while s is constructed when a new thread starts.
+ * 3. thread data of t is constructed only when it's accessed in a new thread, or when t is constructed by assignment. while s (thread data is it's self) is constructed when a new thread starts.
+ * 1. `static thread_local T t;` will always call ctor(construct data) in a new thread. While `static ThreadLocal<T> t;` will construct thread
+ * \code
+ * void f() { static THREAD_LOCAL(int) a = 1; }
+ * \endcode
+ * int data of value 1 constructed only once (when constructing ThreadLocal using get()).
+ * \code
+ * void f() { static THREAD_LOCAL(int) a(1); }
+ * \endcode
+ * int data of value 1 is not constructed because get() is not called.
+ * All the diferences above does not affect your program.
+ */
 template<typename T>
 class ThreadLocal
 {
@@ -72,6 +88,7 @@ public:
         if (index_ == FLS_OUT_OF_INDEXES)
             throw std::system_error(GetLastError(), std::system_category(), "FlsAlloc error");
 #endif
+        //get(); // set tls data when constructing ThreadLocal object, like operator=(T&&)
     }
     ~ThreadLocal() {
 #ifdef USE_PTHREAD
