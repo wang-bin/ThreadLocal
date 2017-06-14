@@ -2,10 +2,11 @@
  * Copyright (c) 2016 WangBin <wbsecg1 at gmail.com>/<binwang at pptv.com>
  */
 #include "ThreadLocal.h"
+#include <iostream>
 #include <string>
 #include <thread>
 using namespace std;
-
+// TODO: compare results and exit(result)
 // default is to try c++11 thread_local: cxx ThreadLocal.cpp c++11flags
 // mingw desktop use fiber api: g++ -DUSE_STD_THREAD_LOCAL=0 -std=c++11 ThreadLocal.cpp -D_WIN32_WINNT=0x0600 
 // mingw desktop use pthread: g++ -DUSE_STD_THREAD_LOCAL=0 -std=c++11 ThreadLocal.cpp

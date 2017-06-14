@@ -5,8 +5,9 @@
 #include <functional>
 #include <memory> //default_delete
 #include <thread>
+#ifndef TLS_NO_DEBUG
 #include <iostream>
-
+#endif
 #ifndef USE_STD_THREAD_LOCAL
 #define USE_STD_THREAD_LOCAL 1 // 0: use our own implementation. 1: use c++11 thread_local if possible
 #endif
@@ -123,7 +124,9 @@ private:
         if (v)
             return static_cast<Data*>(v)->t;
         Data *d = new Data();
+#ifndef TLS_NO_DEBUG
         std::cout << FUNCINFO << " allocate and initialize ThreadLocal data" << std::endl << std::flush;
+#endif
         d->t = ctor_();
         d->tl = this;
 #if defined(USE_PTHREAD)
@@ -146,11 +149,12 @@ private:
     }
 
     struct Data {
+#ifndef TLS_NO_DEBUG
         Data() { std::cout << FUNCINFO << " thread: " << std::this_thread::get_id() << std::endl; }
         ~Data() { std::cout << FUNCINFO << " thread: " << std::this_thread::get_id() << std::endl; }
-
-        const ThreadLocal* tl;
-        T* t;
+#endif
+        const ThreadLocal* tl = nullptr;
+        T* t = nullptr;
     };
 #ifdef USE_PTHREAD
     pthread_key_t key_;
