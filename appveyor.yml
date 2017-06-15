@@ -1,0 +1,80 @@
+# can not have space before '&&', ')' when setting env var in multiple line commands
+branches:
+  only:
+    - master
+    - prelease
+    - ci
+    - appveyor
+
+environment:
+  matrix:
+  - _ARCH: x86
+    _ARCH2: x86
+    _CC: VS2013
+    _VCDIR: VS120COMNTOOLS
+    _PLATFORM: desktop
+  - _ARCH: x64
+    _ARCH2: amd64
+    _CC: VS2013
+    _VCDIR: VS120COMNTOOLS
+    _PLATFORM: desktop
+  - _ARCH: x86
+    _ARCH2: x86
+    _CC: VS2015
+    _VCDIR: VS140COMNTOOLS
+    _PLATFORM: desktop
+  - _ARCH: x64
+    _ARCH2: amd64
+    _CC: VS2015
+    _VCDIR: VS140COMNTOOLS
+    _PLATFORM: desktop
+  - _ARCH: x86
+    _ARCH2: x86
+    _VCDIR: VS141COMNTOOLS
+    _VSVER: 141
+    _PLATFORM: desktop
+  - _ARCH: x64
+    _ARCH2: amd64
+    _CC: VS2017
+    _VCDIR: VS141COMNTOOLS
+    _PLATFORM: desktop
+  - _ARCH: 32
+    _CC: MINGW
+    _PLATFORM: desktop
+  - _ARCH: 64
+    _CC: MINGW
+    _PLATFORM: desktop
+
+matrix:
+  fast_finish: false
+
+init:
+  - set MSYS2_PATH_TYPE=inherit
+  - set MSYS2_DIR=C:\msys64
+
+install:
+# can not starts with %
+  - if /i %_ARCH%==32 set _ARCH2=i686
+  - if /i %_ARCH%==64 set _ARCH2=x86_64
+  - if /i %_CC%==MinGW (
+      C:\msys64\usr\bin\pacman -S --noconfirm --needed mingw-w64-%_ARCH2%-gcc
+    ) else (
+      echo _VCDIR %%_VCDIR%%
+      call "%%_VCDIR%%\..\..\VC\vcvarsall.bat" %_ARCH2%
+    )
+
+before_build:
+  - set HOME=%CD%
+  - set MSYSTEM=%_CC%%_ARCH% # ffmpeg configure refuses to build for mingw in pure msys. so we lie. MUST use upper case. ommited by msvc
+
+build_script:
+  - if /i %_CC%==MinGW (
+      set VC_BUILD=false&&
+      C:\msys64\mingw%_ARCH%\bin\g++ -std=c++11 -DUSE_STD_THREAD_LOCAL=0 -D_WIN32_WINNT=0x0600 test.cpp -o tls_fls -v &&
+      C:\msys64\mingw%_ARCH%\bin\g++ -std=c++11 -DUSE_STD_THREAD_LOCAL=0 test.cpp -o tls_pthread -v &&
+      C:\msys64\mingw%_ARCH%\bin\g++ -std=c++11 test.cpp -o tls -v
+    ) else (
+      cl -MD test.cpp
+    )
+
+test: off
