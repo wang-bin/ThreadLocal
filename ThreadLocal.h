@@ -73,7 +73,8 @@ template<typename T>
 class ThreadLocal
 {
 public:
-    ThreadLocal() : ThreadLocal([]{return new T();}) {}
+    // force cast to std::function<T*()> to fix android/ios clang ambiguous default ctor. why?
+    ThreadLocal() : ThreadLocal(std::function<T*()>([]{return new T();})) {}
     ThreadLocal(const T& t) : ThreadLocal([t]{ return new T(t);}) {}
     ThreadLocal(T&& t) : ThreadLocal([t]{ return new T(t);}) {}
     ThreadLocal(std::function<T*()> c, std::function<void(T*)> d = std::default_delete<T>())
