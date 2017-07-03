@@ -88,7 +88,6 @@ public:
         if (index_ == FLS_OUT_OF_INDEXES)
             throw std::system_error(GetLastError(), std::system_category(), "FlsAlloc error");
 #endif
-        //get(); // set tls data when constructing ThreadLocal object, like operator=(T&&)
     }
     ~ThreadLocal() {
 #ifdef USE_PTHREAD
