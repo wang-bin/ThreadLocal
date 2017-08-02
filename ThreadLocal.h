@@ -12,13 +12,14 @@
 #define USE_STD_THREAD_LOCAL 1 // 0: use our own implementation. 1: use c++11 thread_local if possible
 #endif
 
-// LSB linuxbase, apple clang for iOS(and macOS if xcode<8) has no thread_local, __thread
+// LSB linuxbase, apple clang (__apple_build_version__) for iOS(and macOS if xcode<8) has no thread_local (!__has_feature(cxx_thread_local)), __thread
 // apple: http://asciiwwdc.com/2016/sessions/405#t=354.596
 // android libc++ is poor if libc is old: llvm-libc++abi//src/cxa_thread_atexit.cpp
 #if defined(__clang__)
-//#if defined(__apple_build_version__) /* Clang also masquerades as GCC */
 # if __has_feature(cxx_thread_local) // TODO: check ndk r13 r14(3.8.275480 __clang_patchlevel__) becase libc++abi version is hard to check
-#   define CC_HAS_THREAD_LOCAL
+#   if !(defined(_WIN32) && defined(__GNUC__)) // mingw clang4 does not support non-trivial destructible type
+#     define CC_HAS_THREAD_LOCAL
+#   endif
 # endif
 #elif defined(_MSC_VER) && _MSC_VER >= 1900
 # define CC_HAS_THREAD_LOCAL
