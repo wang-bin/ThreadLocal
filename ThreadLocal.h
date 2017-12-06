@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 WangBin <wbsecg1 at gmail.com>/<binwang at pptv.com>
+ * Copyright (c) 2016-2017 WangBin <wbsecg1 at gmail.com>
  */
 #pragma once
 #include <functional>
@@ -80,7 +80,7 @@ public:
     // force cast to std::function<T*()> to fix android/ios clang ambiguous default ctor. why?
     ThreadLocal() : ThreadLocal(std::function<T*()>([]{return new T();})) {}
     ThreadLocal(const T& t) : ThreadLocal([t]{ return new T(t);}) {}
-    ThreadLocal(T&& t) : ThreadLocal([t]{ return new T(t);}) {}
+    ThreadLocal(T&& t) : ThreadLocal([t]{ return new T(std::move(t));}) {}
     ThreadLocal(std::function<T*()> c, std::function<void(T*)> d = std::default_delete<T>())
     : ctor_(c)
     , dtor_(d) {
@@ -112,7 +112,7 @@ public:
         return *this;
     }
     ThreadLocal& operator=(T&& v) {
-        *get() = std::forward<T>(v);
+        *get() = std::move(v);
         return *this;
     }
 private:
