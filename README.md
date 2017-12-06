@@ -6,6 +6,9 @@ The default implementation of macro `THREAD_LOCAL(...)` is c++11 `thread_local` 
 ## WHY
 `c++11` **thread_local** is not available for vs2013, apple clang for iOS (and macOS if xcode < 8), libc++ in android ndk < r14, and non-trivial TLS destruction is not supported by MinGW clang.
 
+## Limitation
+Variables declared by `THREAD_LOCAL(T)`(actually only `ThreadLocal<T>`) must have static storage duration, i.e. usually `static` specifier is required.
+
 ## Examples
 
 ```
