@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2016-2017 WangBin <wbsecg1 at gmail.com>
+ * Copyright (c) 2016-2018 WangBin <wbsecg1 at gmail.com>
+ * https://github.com/wang-bin/ThreadLocal
+ * https://github.com/wang-bin/cppcompat/blob/master/include/cppcompat/thread_local.hpp
  */
 #pragma once
 #include <functional>
@@ -93,6 +95,17 @@ public:
             throw std::system_error(GetLastError(), std::system_category(), "FlsAlloc error");
 #endif
     }
+    //ThreadLocal(const ThreadLocal& t) : ThreadLocal(*t.get()) {}
+    ThreadLocal(ThreadLocal&& t) : ThreadLocal() {
+        t.move_get(get());
+        //t = T();
+    }
+    ThreadLocal& operator=(ThreadLocal&& t) {
+        t.move_get(get());
+        //*get() = std::move(*t.get());
+       // t = T();
+        return *this;
+    }
     ~ThreadLocal() {
 #ifdef USE_PTHREAD
         pthread_key_delete(key_);
@@ -116,6 +129,17 @@ public:
         return *this;
     }
 private:
+    void move_get(T* t) {
+        void* v = nullptr;
+#if defined(USE_PTHREAD)
+        v = pthread_getspecific(key_);
+#elif defined(USE_FLS)
+        v = FlsGetValue(index_);
+#endif
+        if (!v)
+            return;
+        *t = std::move(*static_cast<Data*>(v)->t);
+    }
     T* get() const {
         void* v = nullptr;
 #if defined(USE_PTHREAD)

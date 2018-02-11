@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 WangBin <wbsecg1 at gmail.com>
+ * Copyright (c) 2016-2018 WangBin <wbsecg1 at gmail.com>
  */
 #include "ThreadLocal.h"
 #include <iostream>
@@ -8,14 +8,17 @@
 using namespace std;
 // TODO: compare results and exit(result)
 // default is to try c++11 thread_local: cxx test.cpp c++11flags
-// mingw desktop use fiber api: g++ -DUSE_STD_THREAD_LOCAL=0 -std=c++11 test.cpp -D_WIN32_WINNT=0x0600 
+// mingw desktop use fiber api: g++ -DUSE_STD_THREAD_LOCAL=0 -std=c++11 test.cpp -D_WIN32_WINNT=0x0600
 // mingw desktop use pthread: g++ -DUSE_STD_THREAD_LOCAL=0 -std=c++11 test.cpp
-// mingw store use fiber api: g++ -DUSE_STD_THREAD_LOCAL=0 -std=c++11 test.cpp 
-// vc use fiber api: cl -DUSE_STD_THREAD_LOCAL=0 test.cpp /MD /EHsc 
+// mingw store use fiber api: g++ -DUSE_STD_THREAD_LOCAL=0 -std=c++11 test.cpp
+// vc use fiber api: cl -DUSE_STD_THREAD_LOCAL=0 test.cpp /MD /EHsc
 // clang use pthread: clang++ -DUSE_STD_THREAD_LOCAL=0 test.cpp
 
 struct X {
-    X(const string& v = string()) : x(v) {
+    X() {
+        std::cout << FUNCINFO <<this << ": " << x << ", thread " << this_thread::get_id() << std::endl;
+    }
+    X(const string& v) : x(v) {
        std::cout << FUNCINFO <<this << ": " << x << ", thread " << this_thread::get_id() << std::endl;
     }
     X(string&& v) : x(std::move(v)) {
@@ -101,13 +104,45 @@ void test_operator_addressof()
 // TODO: array of ptr new T[N]
 int main()
 {
-    thread(test_operator_addressof).join();
+    //thread(test_operator_addressof).join();
     static THREAD_LOCAL(X) x(X("init in main"));
-    thread([&]{
+    /*thread([&]{
         x = X("set in thread");
         std::cout << FUNCINFO << ": " << (string&)(X&)x << ", thread " << this_thread::get_id() << std::endl;
-    }).join();
+    }).join();*/
 
+    printf("@%d\n", __LINE__);
+    static THREAD_LOCAL(X) y;// = std::move(x);
+    std::cout << FUNCINFO << " y: " << (string&)(X&)y << ", thread " << this_thread::get_id() << std::endl;
+    printf("@%d\n", __LINE__);
+    thread([]{
+        std::cout << FUNCINFO << " x: " << (string&)(X&)x << ", thread " << this_thread::get_id() << std::endl;
+    }).join();
+    thread([]{
+        std::cout << FUNCINFO << " y: " << (string&)(X&)y << ", thread " << this_thread::get_id() << std::endl;
+    }).join();
+    //y = x;
+    printf("@%d\n", __LINE__);
+    //x = std::move(y);
+    printf("@%d\n", __LINE__);
+
+    static THREAD_LOCAL(string) xx("789");
+    /*thread([&]{
+        x = X("set in thread");
+        std::cout << FUNCINFO << ": " << (string&)(X&)x << ", thread " << this_thread::get_id() << std::endl;
+    }).join();*/
+
+    printf("@%d\n", __LINE__);
+    static THREAD_LOCAL(string) yy(std::move(xx));
+    std::cout << FUNCINFO << " yy: " << (string&)yy << ", thread " << this_thread::get_id() << std::endl;
+    printf("@%d\n", __LINE__);
+    thread([]{
+        std::cout << FUNCINFO << " xx: " << (string&)xx << ", thread " << this_thread::get_id() << std::endl;
+    }).join();
+    thread([]{
+        std::cout << FUNCINFO << " yy: " << (string&)yy << ", thread " << this_thread::get_id() << std::endl;
+    }).join();
+    return 0;
     thread(test_operator_T).join();
     thread(test_ptr).join();
     thread(test_ctor_move).join();
