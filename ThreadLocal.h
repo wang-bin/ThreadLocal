@@ -39,7 +39,7 @@
 // Fibers api is preferred for mingw targeting vista or later, and msvc
 #if defined(_WIN32) // http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system
 #include <windows.h>
-#   if defined(_MSC_VER) || (!defined(USE_PTHREAD) && _WIN32_WINNT >= 0x0600) // default use fibers api for mingw targeting store/vista
+#   if (defined(_MSC_VER) || !defined(USE_PTHREAD)) && _WIN32_WINNT >= 0x0600 // default use fibers api for mingw targeting store/vista
 #       define USE_FLS // vista, winstore
 #   endif
 #endif
