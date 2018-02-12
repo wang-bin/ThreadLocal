@@ -14,19 +14,22 @@
 #define USE_STD_THREAD_LOCAL 1 // 0: use our own implementation. 1: use c++11 thread_local if possible
 #endif
 
-// apple: http://asciiwwdc.com/2016/sessions/405#t=354.596
-// android libc++ is poor if libc is old: llvm-libc++abi//src/cxa_thread_atexit.cpp
-#if defined(__clang__)
-# if __has_feature(cxx_thread_local) // apple clang (__apple_build_version__) for iOS(and macOS if xcode<8) has no thread_local/__thread, and __has_feature(cxx_thread_local) is false, even if libc++ is 4.0+ 
-// mingw clang4 does not support non-trivial destructible type. TODO: check _LIBCPP_HAS_THREAD_API_WIN32 and _LIBCPP_HAS_THREAD_API_PTHREAD?
-#   if !(defined(_WIN32) && defined(__GNUC__)) \
-        && (!defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 4000) // libc++abi 4.0+ add __cxa_thread_atexit fallback. libstdc++ has __cxa_thread_atexit 
-#     define CC_HAS_THREAD_LOCAL
+#if defined(__clang__) // clang defines _MSC_VER as the cl builds it, or masquerades as gcc4.2, so check clang first
+# if __has_feature(cxx_thread_local) // apple clang: no cxx_thread_local for iOS(and macOS if xcode<8), no thread_local/__thread. opensource clang: targeting macOS 10.7+
+#   if defined(__APPLE__) // always implemented in _tlv_atexit(apple/opensource) for darwin, which is available in macOS10.10+/iOS8.0+
+#       if (__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ + 0) >= 101000
+#           define CC_HAS_THREAD_LOCAL
+#       endif
+#   else // for both libstdc++(g++4.8+) and libc++. implemented in __cxa_thread_atexit in libc++abi, 4.0+ abi has a fallback if no __cxa_thread_atexit_impl (e.g. android<23)
+#       if (!defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 4000) \
+            && !(defined(_WIN32) && defined(__GNUC__)) /*mingw clang does not support non-trivial destructible types*/
+#           define CC_HAS_THREAD_LOCAL
+#       endif
 #   endif
 # endif
-#elif defined(_MSC_VER) && _MSC_VER >= 1900 // TODO: clang msvc supports tls
+#elif (_MSC_VER+0) >= 1900 // TODO: clang targeting msvc supports tls
 # define CC_HAS_THREAD_LOCAL
-#elif defined(__GNUC__) && (__GNUC__*100+__GNUC_MINOR__ >= 408)
+#elif (__GNUC__*100+__GNUC_MINOR__) >= 408 // can't be clang
 # define CC_HAS_THREAD_LOCAL
 #endif
 
