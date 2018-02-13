@@ -24,6 +24,8 @@
 #       if (!defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 4000) \
             && !(defined(_WIN32) && defined(__GNUC__)) /*mingw clang does not support non-trivial destructible types*/
 #           define CC_HAS_THREAD_LOCAL
+#       elif defined(_MSC_VER)
+#           define CC_HAS_THREAD_LOCAL
 #       endif
 #   endif
 # endif
@@ -154,7 +156,7 @@ private:
             return static_cast<Data*>(v)->t;
         Data *d = new Data();
 #ifndef TLS_NO_DEBUG
-        std::cout << FUNCINFO << " allocate and initialize ThreadLocal data" << std::endl << std::flush;
+        std::clog << FUNCINFO << " allocate and initialize ThreadLocal data" << std::endl << std::flush;
 #endif
         d->t = ctor_();
         d->tl = this;
@@ -179,8 +181,8 @@ private:
 
     struct Data {
 #ifndef TLS_NO_DEBUG
-        Data() { std::cout << FUNCINFO << " thread: " << std::this_thread::get_id() << std::endl; }
-        ~Data() { std::cout << FUNCINFO << " thread: " << std::this_thread::get_id() << std::endl; }
+        Data() { std::clog << FUNCINFO << " thread: " << std::this_thread::get_id() << std::endl; }
+        ~Data() { std::clog << FUNCINFO << " thread: " << std::this_thread::get_id() << std::endl; }
 #endif
         const ThreadLocal* tl = nullptr;
         T* t = nullptr;
