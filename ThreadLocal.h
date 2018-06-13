@@ -11,7 +11,7 @@
 #include <iostream>
 #endif
 #ifndef USE_STD_THREAD_LOCAL
-#define USE_STD_THREAD_LOCAL 1 // 0: use our own implementation. 1: use c++11 thread_local if possible
+#define USE_STD_THREAD_LOCAL 0 // 0: use our own implementation. 1: use c++11 thread_local if possible.
 #endif
 
 #if defined(__clang__) // clang defines _MSC_VER as the cl builds it, or masquerades as gcc4.2, so check clang first

@@ -4,7 +4,8 @@ Portable, implementation configurable and `c++11` thread_local compatible. The s
 The default implementation of macro `THREAD_LOCAL(...)` is c++11 `thread_local` keyword if supported. Otherwise, pthread and FLS implementation is used.
 
 ## WHY
-`c++11` **thread_local** is not available for vs2013, macOS<10.10 and iOS, libc++ < 4.0(android ndk < r14), and non-trivial TLS destruction is not supported by MinGW clang.
+- `c++11` **thread_local** is not available for vs2013, macOS<10.10 and iOS, libc++ < 4.0(android ndk < r14), and non-trivial TLS destruction is not supported by MinGW clang.
+- std thread_local may have bugs, including mingw and android, see android-ndk/ndk issue 687
 
 ## Limitation
 Variables declared by `THREAD_LOCAL(T)`(actually only `ThreadLocal<T>`) must have static storage duration, i.e. usually `static` specifier is required.
