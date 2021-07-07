@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 WangBin <wbsecg1 at gmail.com>
+ * Copyright (c) 2016-2021 WangBin <wbsecg1 at gmail.com>
  * https://github.com/wang-bin/ThreadLocal
  * https://github.com/wang-bin/cppcompat/blob/master/include/cppcompat/thread_local.hpp
  */
@@ -17,9 +17,8 @@
 #if defined(__clang__) // clang defines _MSC_VER as the cl builds it, or masquerades as gcc4.2, so check clang first
 # if __has_feature(cxx_thread_local) // apple clang: no cxx_thread_local for iOS(and macOS if xcode<8), no thread_local/__thread. opensource clang: targeting macOS 10.7+
 #   if defined(__APPLE__) // always implemented in _tlv_atexit(apple/opensource) for darwin, which is available in macOS10.10+/iOS8.0+
-#       if (__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ + 0) >= 101000
-#           define CC_HAS_THREAD_LOCAL
-#       endif
+// new clang/libc++7.0 supports osx10.4+ (compiler-rt) but not ios<8.0: https://lists.llvm.org/pipermail/llvm-dev/2018-December/128364.html
+#       define CC_HAS_THREAD_LOCAL
 #   else // for both libstdc++(g++4.8+) and libc++. implemented in __cxa_thread_atexit in libc++abi, 4.0+ abi has a fallback if no __cxa_thread_atexit_impl (e.g. android<23)
 #       if (!defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 4000) \
             && !(defined(_WIN32) && defined(__GNUC__)) /*mingw clang does not support non-trivial destructible types*/
